@@ -14,6 +14,7 @@ const LIGHT_SOURCE_PREFAB: PackedScene = preload("res://app/scenes/light_source_
 var current_direction: Vector2 = Vector2.ZERO
 var light_component: LightSourceComponent
 
+signal action_taken()  # Сигнал, который emit после любого действия (1 AP)
 
 func init(pos: Vector2) -> void:
 	# Move player to init position.
@@ -36,17 +37,12 @@ func init(pos: Vector2) -> void:
 	# Debug: Move to starting position.
 
 func _process(_delta: float) -> void:
+	if TurnManager.current_state != TurnManager.TurnState.PLAYER_TURN:
+		return
+	
 	var input_dir: Vector2 = get_input_direction()
 	if input_dir != Vector2.ZERO:
-		if input_dir != current_direction:
-			# New direction: move immediately and start timer with initial delay.
-			_move(input_dir)
-			current_direction = input_dir
-			move_timer.start(initial_delay)
-	else:
-		# No input: reset and stop timer.
-		current_direction = Vector2.ZERO
-		move_timer.stop()
+		_move(input_dir)
 
 
 # Gets current input direction (prioritizes right/left over down/up).
@@ -74,7 +70,8 @@ func _on_move_timer_timeout() -> void:
 # Moves player in direction if target is walkable.
 func _move(dir: Vector2) -> void:
 	# Flip sprite horizontally.
-	sprite.flip_h = dir.x < 0
+	if dir.x != 0:
+		sprite.flip_h = dir.x < 0
 	
 	var current_grid: Vector2i = get_grid_pos()
 	var target_grid: Vector2i = current_grid + Vector2i(dir)
@@ -82,6 +79,7 @@ func _move(dir: Vector2) -> void:
 	if GridManager.is_walkable(target_grid):
 		position = G.grid_to_world(target_grid)
 		light_component.move_light(target_grid)
+		emit_signal("action_taken")
 
 
 # Gets current grid position.

@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3 uid="uid://bmp0dw5npvbsg"]
+[gd_scene load_steps=8 format=3 uid="uid://bmp0dw5npvbsg"]
 
 [ext_resource type="Script" uid="uid://bimi6uxc8n3vh" path="res://app/scipts/TileMap/MapRenderer.gd" id="1_367eh"]
 [ext_resource type="Texture2D" uid="uid://b4fqiyyp0dclb" path="res://app/assets/sprites/player.png" id="1_aou6w"]
 [ext_resource type="Script" uid="uid://jt477i5f2ei4" path="res://app/scipts/World.gd" id="1_oqxhb"]
 [ext_resource type="TileSet" uid="uid://cxu7r1xpib04c" path="res://app/assets/FloorTileSet.tres" id="2_2xy6x"]
+[ext_resource type="LabelSettings" uid="uid://bttsudi5uk4dt" path="res://app/assets/default_label_settings.tres" id="2_17epa"]
 [ext_resource type="TileSet" uid="uid://u4047s1arilt" path="res://app/assets/WallsTileSet.tres" id="3_oqxhb"]
 [ext_resource type="Script" uid="uid://d0nvd1ndq83pj" path="res://app/scipts/Player.gd" id="5_axaug"]
 
@@ -11,6 +12,16 @@
 script = ExtResource("1_oqxhb")
 map_renderer = NodePath("TileMap")
 player = NodePath("Player")
+
+[node name="Canvas" type="CanvasLayer" parent="."]
+
+[node name="DebugLabel" type="Label" parent="Canvas"]
+offset_right = 60.0
+offset_bottom = 15.0
+text = "turn: Player"
+label_settings = ExtResource("2_17epa")
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="TileMap" type="Node" parent="." node_paths=PackedStringArray("floor_layer", "walls_layer")]
 script = ExtResource("1_367eh")

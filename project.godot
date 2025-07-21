@@ -22,6 +22,7 @@ G="*res://app/scipts/Managers/G.gd"
 MapGenerator="*res://app/scipts/Managers/MapGenerator.gd"
 DualGridx8Mapper="*res://utils/DualGridx8Mapper.gd"
 LightingManager="*res://app/scipts/Managers/LightingManager.gd"
+TurnManager="*res://app/scipts/Managers/TurnManager.gd"
 
 [display]
 
