@@ -4,6 +4,7 @@ class_name World
 extends Node2D
 
 @export var map_renderer: MapRenderer
+@export var player: Player
 
 
 func _ready() -> void:
@@ -23,3 +24,4 @@ func _initialize_level() -> void:
 	GridManager.level = level
 	GridManager.map_level()
 	GridManager.draw_full_level()
+	player.init(Vector2i(8, 4))

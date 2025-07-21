@@ -1,5 +1,6 @@
 # res://app/scipts/Player.gd
 # Player script for movement and light handling.
+class_name Player
 extends Node2D
 
 const LIGHT_SOURCE_PREFAB: PackedScene = preload("res://app/scenes/light_source_component.tscn")
@@ -14,7 +15,10 @@ var current_direction: Vector2 = Vector2.ZERO
 var light_component: LightSourceComponent
 
 
-func _ready() -> void:
+func init(pos: Vector2) -> void:
+	# Move player to init position.
+	position = G.grid_to_world(pos)
+	
 	# Add light source component.
 	var light_instance: LightSourceComponent = LIGHT_SOURCE_PREFAB.instantiate()
 	add_child(light_instance)
@@ -30,8 +34,6 @@ func _ready() -> void:
 	move_timer.timeout.connect(_on_move_timer_timeout)
 	
 	# Debug: Move to starting position.
-	global_position = Vector2(128, 68)  # Use Vector2 for position
-
 
 func _process(_delta: float) -> void:
 	var input_dir: Vector2 = get_input_direction()

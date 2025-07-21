@@ -2,14 +2,15 @@
 
 [ext_resource type="Script" uid="uid://bimi6uxc8n3vh" path="res://app/scipts/TileMap/MapRenderer.gd" id="1_367eh"]
 [ext_resource type="Texture2D" uid="uid://b4fqiyyp0dclb" path="res://app/assets/sprites/player.png" id="1_aou6w"]
-[ext_resource type="Script" uid="uid://jt477i5f2ei4" path="res://app/scipts/world.gd" id="1_oqxhb"]
+[ext_resource type="Script" uid="uid://jt477i5f2ei4" path="res://app/scipts/World.gd" id="1_oqxhb"]
 [ext_resource type="TileSet" uid="uid://cxu7r1xpib04c" path="res://app/assets/FloorTileSet.tres" id="2_2xy6x"]
 [ext_resource type="TileSet" uid="uid://u4047s1arilt" path="res://app/assets/WallsTileSet.tres" id="3_oqxhb"]
 [ext_resource type="Script" uid="uid://d0nvd1ndq83pj" path="res://app/scipts/Player.gd" id="5_axaug"]
 
-[node name="World" type="Node2D" node_paths=PackedStringArray("map_renderer")]
+[node name="World" type="Node2D" node_paths=PackedStringArray("map_renderer", "player")]
 script = ExtResource("1_oqxhb")
 map_renderer = NodePath("TileMap")
+player = NodePath("Player")
 
 [node name="TileMap" type="Node" parent="." node_paths=PackedStringArray("floor_layer", "walls_layer")]
 script = ExtResource("1_367eh")
