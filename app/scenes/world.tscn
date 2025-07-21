@@ -1,0 +1,43 @@
+[gd_scene load_steps=7 format=3 uid="uid://bmp0dw5npvbsg"]
+
+[ext_resource type="Script" uid="uid://bimi6uxc8n3vh" path="res://app/scipts/TileMap/MapRenderer.gd" id="1_367eh"]
+[ext_resource type="Texture2D" uid="uid://b4fqiyyp0dclb" path="res://app/assets/sprites/player.png" id="1_aou6w"]
+[ext_resource type="Script" uid="uid://jt477i5f2ei4" path="res://app/scipts/world.gd" id="1_oqxhb"]
+[ext_resource type="TileSet" uid="uid://cxu7r1xpib04c" path="res://app/assets/FloorTileSet.tres" id="2_2xy6x"]
+[ext_resource type="TileSet" uid="uid://u4047s1arilt" path="res://app/assets/WallsTileSet.tres" id="3_oqxhb"]
+[ext_resource type="Script" uid="uid://d0nvd1ndq83pj" path="res://app/scipts/Player.gd" id="5_axaug"]
+
+[node name="World" type="Node2D" node_paths=PackedStringArray("_map_render")]
+script = ExtResource("1_oqxhb")
+_map_render = NodePath("TileMap")
+
+[node name="TileMap" type="Node" parent="." node_paths=PackedStringArray("_floor", "_walls")]
+script = ExtResource("1_367eh")
+_floor = NodePath("Floor")
+_walls = NodePath("Walls")
+
+[node name="Floor" type="TileMapLayer" parent="TileMap"]
+tile_set = ExtResource("2_2xy6x")
+
+[node name="Walls" type="TileMapLayer" parent="TileMap"]
+tile_map_data = PackedByteArray(0, 0, 5, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 5, 0, 0, 0, 1, 0, 0, 0, 0, 0, 5, 0, 6, 0, 0, 0, 0, 0, 1, 0, 0, 0, 6, 0, 6, 0, 0, 0, 1, 0, 1, 0, 0, 0, 17, 0, 11, 0, 0, 0, 1, 0, 0, 0, 0, 0)
+tile_set = ExtResource("3_oqxhb")
+
+[node name="Player" type="Node2D" parent="."]
+position = Vector2(64, 64)
+script = ExtResource("5_axaug")
+
+[node name="PlayerSprite" type="Sprite2D" parent="Player"]
+z_index = 1
+position = Vector2(8, 8)
+texture = ExtResource("1_aou6w")
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+position_smoothing_enabled = true
+position_smoothing_speed = 30.0
+drag_left_margin = 0.5
+drag_top_margin = 0.5
+drag_right_margin = 0.5
+drag_bottom_margin = 0.5
+
+[node name="MoveTimer" type="Timer" parent="Player"]
