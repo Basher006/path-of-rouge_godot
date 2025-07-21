@@ -1,21 +1,23 @@
 # res://app/TileMap/MyTileData.gd
-# Хранит все данные клетки.
+# Stores data for a single tile.
 class_name MyTileData
 extends RefCounted
 
-var is_walkable = true
-var is_transparent = true
+var is_walkable: bool = true
+var is_transparent: bool = true
 var _data: Dictionary = {}
 
 
-# Создает запись.
-func set_property(key: StringName, value):
+# Sets a property.
+func set_property(key: StringName, value) -> void:
 	_data[key] = value
 
-# Возвращает значение или default, если ключа нет.
-func get_property(key: StringName, default_value = null):
-	return _data.get(key, default_value)
 
-# Проверка наличия свойства.
+# Gets a property or default.
+func get_property(key: StringName, default = null):
+	return _data.get(key, default)
+
+
+# Checks if property exists.
 func has_property(key: StringName) -> bool:
 	return _data.has(key)

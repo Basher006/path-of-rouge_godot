@@ -1,26 +1,32 @@
 # res://app/scipts/TileMap/MapRenderer.gd
-# Единственная задача этого класса, рисовать тайлы на тайлмапах
-extends Node
+# Renders tiles on TileMap layers.
 class_name MapRenderer
+extends Node
 
-@export var _floor: TileMapLayer
-@export var _walls: TileMapLayer
-@export var _floor_atlas_index: int = 0
-@export var _walls_atlas_index: int = 0
-
+@export var floor_layer: TileMapLayer
+@export var walls_layer: TileMapLayer
+@export var floor_atlas_id: int = 0
+@export var walls_atlas_id: int = 0
 
 var floor_cell_size: int = 16
 var wall_cell_size: int = 8
 
 
+# Sets floor tile at position.
 func set_floor_tile(pos: Vector2i, index: Vector2i) -> void:
-	_floor.set_cell(pos, _floor_atlas_index, index)
+	floor_layer.set_cell(pos, floor_atlas_id, index)
 
+
+# Sets wall tile at position.
 func set_wall_tile(pos: Vector2i, index: Vector2i) -> void:
-	_walls.set_cell(pos, _walls_atlas_index, index)
+	walls_layer.set_cell(pos, walls_atlas_id, index)
 
+
+# Clears all walls.
 func clear_walls() -> void:
-	_walls.clear()
+	walls_layer.clear()
 
+
+# Clears all floor tiles.
 func clear_floor() -> void:
-	_floor.clear()
+	floor_layer.clear()

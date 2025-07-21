@@ -1,21 +1,20 @@
 # res://app/TileMap/LevelData.gd
-# Хранит все данны об уровне и клетках.
+# Stores level data and tile grid.
 class_name LevelData
 extends RefCounted
 
-var grid: Array = []
+var grid: Array[Array] = []
 var width: int = 0
 var height: int = 0
 
 
-# Ициализирует пустой уровень размера W x H 
-func init(w: int, h: int) -> void:
+# Initializes empty level of size width x height.
+func initialize(w: int, h: int) -> void:
 	width = w
 	height = h
 	grid.clear()
 	for y in range(height):
-		var row: Array = []
+		var row: Array[MyTileData] = []
 		for x in range(width):
-			var tile = MyTileData.new()
-			row.append(tile)
+			row.append(MyTileData.new())
 		grid.append(row)

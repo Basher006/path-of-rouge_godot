@@ -1,193 +1,194 @@
 # res://app/TileMap/GridManager.gd
-# Менеджер клеток таилмапы. Через него осуществляется доступ к данным уронвня
-extends  Node
+# Manages tile data access for the level.
+extends Node
 
-
-enum TileType{
-	EMPTY,
-	WALL,
-	INTERACTIVE
-}
-
+enum TileType { EMPTY, WALL, INTERACTIVE }
 
 var level: LevelData
 var map_renderer: MapRenderer
 
+
+# Returns tile data at position or null if invalid.
 func get_tile(pos: Vector2i) -> MyTileData:
 	if not is_valid_pos(pos):
-		push_warning("Invalid position: " + str(pos))
 		return null
 	return level.grid[pos.y][pos.x]
 
+
+# Returns floor light level at position.
 func get_floor_tile_light(pos: Vector2i) -> LightingManager.LightLevel:
-	if is_valid_pos(pos):
-		var tile = get_tile(pos)
-		if tile != null:
-			if tile.has_property("floor_light_level"):
-				return tile.get_property("floor_light_level", LightingManager.LightLevel.DARK)
-	
+	var tile: MyTileData = get_tile(pos)
+	if tile and tile.has_property("floor_light_level"):
+		return tile.get_property("floor_light_level", LightingManager.LightLevel.DARK)
 	return LightingManager.LightLevel.DARK
 
+
+# Checks if position is walkable.
 func is_walkable(pos: Vector2i) -> bool:
-	var tile = get_tile(pos)
-	if tile == null:
-		return false
-	return tile.is_walkable
+	var tile: MyTileData = get_tile(pos)
+	return tile and tile.is_walkable
 
+
+# Checks if position is valid within level bounds.
 func is_valid_pos(pos: Vector2i) -> bool:
-	if level == null:
-		return false
-	
-	return pos.x >= 0 and pos.x < level.width and pos.y >= 0 and pos.y < level.height
+	return level and pos.x >= 0 and pos.x < level.width and pos.y >= 0 and pos.y < level.height
 
-func is_transporent(pos: Vector2i) -> bool:
-	if level == null:
-		return false
-	var tile = get_tile(pos)
-	if tile == null:
-		return false
-	return tile.is_transparent
 
+# Checks if position is transparent to light.
+func is_transparent(pos: Vector2i) -> bool:
+	var tile: MyTileData = get_tile(pos)
+	return tile and tile.is_transparent
+
+
+# Maps the entire level (sets floor/wall textures).
 func map_level() -> void:
-	if level == null:
-		push_error("Cant mapping empty level!")
+	if not level:
 		return
+	
 	for y in range(level.height - 1):
 		for x in range(level.width - 1):
-			var pos = Vector2i(x, y)
-			var tile = get_tile(pos)
-			if tile != null:
-				var tile_type = tile.get_property("type")
-				if tile_type != null:
-					if tile_type == TileType.EMPTY:
-						tile.set_property("floor_tile_texture", DualGridx8Mapper.get_floor_atlas_coord(pos))
-					var is_wall_matrix = _get_walls_matrix_2x2(pos) # HERE BIG THING WRONG (!!!)
-					if is_wall_matrix[0] or is_wall_matrix[1] or is_wall_matrix[2] or is_wall_matrix[3]:
-						var texture_indices = DualGridx8Mapper.get_walls_atlas_coord_a(is_wall_matrix)
-						set_wall_tile_texture_property(pos + Vector2i(0, 0), texture_indices, 0)
-						set_wall_tile_texture_property(pos + Vector2i(1, 0), texture_indices, 1)
-						set_wall_tile_texture_property(pos + Vector2i(0, 1), texture_indices, 2)
-						set_wall_tile_texture_property(pos + Vector2i(1, 1), texture_indices, 3)
+			var pos: Vector2i = Vector2i(x, y)
+			var tile: MyTileData = get_tile(pos)
+			if not tile:
+				continue
+			
+			var tile_type: TileType = tile.get_property("type", TileType.EMPTY)
+			if tile_type == TileType.EMPTY:
+				tile.set_property("floor_tile_texture", DualGridx8Mapper.get_floor_atlas_coord(pos))
+			
+			var wall_matrix: Array = _get_walls_matrix_2x2(pos)
+			if wall_matrix.any(func(is_wall): return is_wall):
+				var texture_indices: = DualGridx8Mapper.get_walls_atlas_coord_array(wall_matrix)
+				_set_wall_tile_texture(pos + Vector2i(0, 0), texture_indices, 0)
+				_set_wall_tile_texture(pos + Vector2i(1, 0), texture_indices, 1)
+				_set_wall_tile_texture(pos + Vector2i(0, 1), texture_indices, 2)
+				_set_wall_tile_texture(pos + Vector2i(1, 1), texture_indices, 3)
 
+
+# Draws the entire level on the tilemap.
 func draw_full_level() -> void:
-	if level == null:
-		push_error("Cant draw empty level!")
+	if not level:
 		return
+	
 	map_renderer.clear_floor()
 	map_renderer.clear_walls()
+	
 	for y in range(level.height - 1):
 		for x in range(level.width - 1):
-			var pos = Vector2i(x, y)
-			var tile = get_tile(pos)
-			if tile != null:
-				if is_floor(pos):
-					draw_floor(pos)
-				draw_wall(pos)
+			var pos: Vector2i = Vector2i(x, y)
+			if is_floor(pos):
+				draw_floor(pos)
+			draw_wall(pos)
 
+
+# Updates and redraws specified tiles.
 func update_tiles(tiles: Dictionary) -> void:
-	if not tiles.is_empty():
-		for tile_pos in tiles.keys():
-			if is_valid_pos(tile_pos):
-				var tile = get_tile(tile_pos)
-				if tile != null:
-					if tile.has_property("floor_tile_texture"):
-						draw_floor(tile_pos)
-					if tile.has_property("wall_tile_texture"):
-						draw_wall(tile_pos)
+	for tile_pos in tiles.keys():
+		if not is_valid_pos(tile_pos):
+			continue
+		var tile: MyTileData = get_tile(tile_pos)
+		if not tile:
+			continue
+		if tile.has_property("floor_tile_texture"):
+			draw_floor(tile_pos)
+		if tile.has_property("wall_tile_texture"):
+			draw_wall(tile_pos)
 
+
+# Marks floor as explored.
 func set_floor_as_explored(pos: Vector2i) -> void:
-	if is_valid_pos(pos):
-		var tile = get_tile(pos)
-		if tile != null:
-			tile.set_property("floor_explored", true)
+	var tile: MyTileData = get_tile(pos)
+	if tile:
+		tile.set_property("floor_explored", true)
 
-func set_wall_as_explored(pos: Vector2i, light_array: Array) -> void:
-	if is_valid_pos(pos):
-		var tile = get_tile(pos)
-		if tile != null:
-			var explored_flags = tile.get_property("walls_explored", [false, false, false, false])
-			tile.set_property("walls_explored", [
-				light_array[0] < LightingManager.LightLevel.DARK or explored_flags[0], 
-				light_array[1] < LightingManager.LightLevel.DARK or explored_flags[1],
-				light_array[2] < LightingManager.LightLevel.DARK or explored_flags[2], 
-				light_array[3] < LightingManager.LightLevel.DARK or explored_flags[3]])
 
+# Marks walls as explored based on light levels.
+func set_wall_as_explored(pos: Vector2i, light_levels: Array) -> void:
+	var tile: MyTileData = get_tile(pos)
+	if not tile:
+		return
+	var explored_flags: Array = tile.get_property("walls_explored", [false, false, false, false])
+	var new_flags: Array = []
+	for i in 4:
+		new_flags.append(light_levels[i] < LightingManager.LightLevel.DARK or explored_flags[i])
+	tile.set_property("walls_explored", new_flags)
+
+
+# Draws floor tile with light and exploration.
 func draw_floor(pos: Vector2i) -> void:
-	var tile = get_tile(pos)
-	if tile != null:
-		var floor_texture_index = tile.get_property("floor_tile_texture")
-		var floor_light_level = tile.get_property("floor_light_level")
-		var floor_explored = tile.get_property("floor_explored")
-		if floor_texture_index != null and floor_light_level != null:
-			var floor_light_texture_index = LightingManager.get_floor_texture_index_with_light_offset(floor_texture_index, floor_light_level, floor_explored)
-			map_renderer.set_floor_tile(pos, floor_light_texture_index)
+	var tile: MyTileData = get_tile(pos)
+	if not tile:
+		return
+	var texture_index: Vector2i = tile.get_property("floor_tile_texture", Vector2i.ZERO)
+	var light_level: int = tile.get_property("floor_light_level", LightingManager.LightLevel.DARK)
+	var explored: bool = tile.get_property("floor_explored", false)
+	var final_index: Vector2i = LightingManager.get_floor_texture_index_with_light_offset(texture_index, light_level, explored)
+	map_renderer.set_floor_tile(pos, final_index)
 
+
+# Draws wall sub-tiles with light and exploration.
 func draw_wall(pos: Vector2i) -> void:
-	var tile = get_tile(pos)
-	if tile != null:
-		var wall_texture_indices = tile.get_property("wall_tile_texture")
-		var wall_light_levels = tile.get_property("walls_light_level")
-		var wall_explored = tile.get_property("walls_explored")
-		if wall_texture_indices != null:
-			var walls_cell_pos = pos_to_walls_cell_pos(pos)
-			
-			var lt_wall_cell_pos = walls_cell_pos + Vector2i(1, 1) # У меня нет идей почему оффсеты в обратном порядке.
-			var rt_wall_cell_pos = walls_cell_pos + Vector2i(0, 1) # Но так оно заработало. 
-			var lb_wall_cell_pos = walls_cell_pos + Vector2i(1, 0)
-			var rb_wall_cell_pos = walls_cell_pos + Vector2i(0, 0)
-			
-			_draw_wall_subtile(lt_wall_cell_pos, wall_texture_indices, wall_light_levels, 0, wall_explored)
-			_draw_wall_subtile(rt_wall_cell_pos, wall_texture_indices, wall_light_levels, 1, wall_explored)
-			_draw_wall_subtile(lb_wall_cell_pos, wall_texture_indices, wall_light_levels, 2, wall_explored)
-			_draw_wall_subtile(rb_wall_cell_pos, wall_texture_indices, wall_light_levels, 3, wall_explored)
+	var tile: MyTileData = get_tile(pos)
+	if not tile or not tile.has_property("wall_tile_texture"):
+		return
+	
+	var texture_indices: Array = tile.get_property("wall_tile_texture", [])
+	var light_levels: Array = tile.get_property("walls_light_level", [])
+	var explored_flags: Array = tile.get_property("walls_explored", [false, false, false, false])
+	
+	var walls_cell_pos: Vector2i = pos_to_walls_cell_pos(pos)
+	_draw_wall_subtile(walls_cell_pos + Vector2i(1, 1), texture_indices, light_levels, explored_flags, 0)  # Top-left
+	_draw_wall_subtile(walls_cell_pos + Vector2i(0, 1), texture_indices, light_levels, explored_flags, 1)  # Top-right
+	_draw_wall_subtile(walls_cell_pos + Vector2i(1, 0), texture_indices, light_levels, explored_flags, 2)  # Bottom-left
+	_draw_wall_subtile(walls_cell_pos + Vector2i(0, 0), texture_indices, light_levels, explored_flags, 3)  # Bottom-right
 
-func _draw_wall_subtile(walls_cell_pos: Vector2i, wall_texture_indices, wall_light_levels, index: int, explored) -> void:
-	if wall_texture_indices != null:
-		var light: int = LightingManager.LightLevel.DARK
-		if wall_light_levels != null:
-			light = wall_light_levels[index]
-		var texture_index = LightingManager.get_walls_texture_index_with_light_offset(wall_texture_indices[index], light, explored[index])
-		map_renderer.set_wall_tile(walls_cell_pos, texture_index)
 
+# Draws a single wall sub-tile.
+func _draw_wall_subtile(cell_pos: Vector2i, texture_indices: Array, light_levels: Array, explored_flags: Array, index: int) -> void:
+	var light: int = light_levels[index] if index < light_levels.size() else LightingManager.LightLevel.DARK
+	var explored: bool = explored_flags[index] if index < explored_flags.size() else false
+	var final_index: Vector2i = LightingManager.get_walls_texture_index_with_light_offset(texture_indices[index], light, explored)
+	map_renderer.set_wall_tile(cell_pos, final_index)
+
+
+# Converts grid pos to walls cell pos.
 func pos_to_walls_cell_pos(pos: Vector2i) -> Vector2i:
-	var world_pos = cell_pos_to_world_pos(pos)
-	return _world_to_walls_cell_pos(world_pos)
+	var world_pos: Vector2i = cell_pos_to_world_pos(pos)
+	return world_pos / map_renderer.wall_cell_size
 
-func set_wall_tile_texture_property(pos: Vector2i, values: Array, index: int) -> void:
-	if is_valid_pos(pos):
-		var tile = get_tile(pos)
-		if tile != null:
-			var texture = [DualGridx8Mapper.empty_tile ,DualGridx8Mapper.empty_tile ,DualGridx8Mapper.empty_tile , DualGridx8Mapper.empty_tile]
-			if tile.has_property("wall_tile_texture"):
-				texture = tile.get_property("wall_tile_texture", [])
-				
-			texture[index] = values[index]
-			tile.set_property("wall_tile_texture", texture)
 
+# Sets wall texture property for a sub-tile.
+func _set_wall_tile_texture(pos: Vector2i, values: Array, index: int) -> void:
+	var tile: MyTileData = get_tile(pos)
+	if not tile:
+		return
+	var textures: Array = tile.get_property("wall_tile_texture", [DualGridx8Mapper.EMPTY_TILE, DualGridx8Mapper.EMPTY_TILE, DualGridx8Mapper.EMPTY_TILE, DualGridx8Mapper.EMPTY_TILE])
+	textures[index] = values[index]
+	tile.set_property("wall_tile_texture", textures)
+
+
+# Converts cell pos to world pos.
 func cell_pos_to_world_pos(pos: Vector2i) -> Vector2i:
-	return Vector2i(pos.x * map_renderer.floor_cell_size, pos.y * map_renderer.floor_cell_size)
+	return pos * map_renderer.floor_cell_size
 
-func _world_to_walls_cell_pos(pos: Vector2i) -> Vector2i:
-	return Vector2i(pos.x / map_renderer.wall_cell_size, pos.y / map_renderer.wall_cell_size)
 
-func _get_walls_matrix_2x2(pos: Vector2i) -> Array[bool]:
-	var lt_is_wall = is_wall(pos)
-	var rt_is_wall = is_wall(pos + Vector2i(1, 0))
-	var lb_is_wall = is_wall(pos + Vector2i(0, 1))
-	var rb_is_wall = is_wall(pos + Vector2i(1, 1))
-	
-	return [lt_is_wall, rt_is_wall, lb_is_wall, rb_is_wall]
+# Returns 2x2 wall matrix at position.
+func _get_walls_matrix_2x2(pos: Vector2i) -> Array:
+	return [
+		is_wall(pos),
+		is_wall(pos + Vector2i(1, 0)),
+		is_wall(pos + Vector2i(0, 1)),
+		is_wall(pos + Vector2i(1, 1))
+	]
 
+
+# Checks if position is a wall.
 func is_wall(pos: Vector2i) -> bool:
-	var tile = get_tile(pos)
-	if tile != null:
-		return tile.get_property("type") == TileType.WALL
-	
-	return false
+	var tile: MyTileData = get_tile(pos)
+	return tile and tile.get_property("type") == TileType.WALL
 
+
+# Checks if position is floor.
 func is_floor(pos: Vector2i) -> bool:
-	var tile = get_tile(pos)
-	if tile != null:
-		return tile.get_property("type") == TileType.EMPTY
-	
-	return false
+	var tile: MyTileData = get_tile(pos)
+	return tile and tile.get_property("type") == TileType.EMPTY

@@ -1,61 +1,50 @@
 # res://app/scipts/Managers/MapGenerator.gd
-# Создает уровни игры.
-extends  Node
+# Generates game levels.
+extends Node
+
+const DEFAULT_LIGHT_LEVEL: LightingManager.LightLevel = LightingManager.LightLevel.DARK
+const DEFAULT_EXPLORED: bool = false
 
 
-const default_light_level = LightingManager.LightLevel.DARK
-const default_explore_flag = false
-
-
+# Loads level from image (colors map to tile types).
 func load_from_image(path: String) -> LevelData:
-	var image = Image.new()
-	if image.load(path) != OK :
-		push_error("Failed to load image: " + path)
+	var image: Image = Image.new()
+	if image.load(path) != OK:
 		return null
 	
-	var img_width = image.get_width()
-	var img_height = image.get_height()
-	var level = LevelData.new()
-	level.init(img_width, img_height)
+	var img_width: int = image.get_width()
+	var img_height: int = image.get_height()
+	var level: LevelData = LevelData.new()
+	level.initialize(img_width, img_height)
 	
 	var color_to_type: Dictionary = {
-		Color(0, 0, 0): GridManager.TileType.WALL,     # Чёрный - стена
-		Color(1, 1, 1): GridManager.TileType.EMPTY,    # Белый - пол
-		Color(1, 0, 0): GridManager.TileType.INTERACTIVE  # Красный - дверь/сундук
+		Color(0, 0, 0): GridManager.TileType.WALL,
+		Color(1, 1, 1): GridManager.TileType.EMPTY,
+		Color(1, 0, 0): GridManager.TileType.INTERACTIVE
 	}
 	
 	for y in range(img_height):
 		for x in range(img_width):
-			var color = image.get_pixel(x, y)
-			#var pos = Vector2i(x, y)
-			# Используем is_equal_approx для tolerance (чтобы избежать проблем с артефактами в PNG)
-			var type = GridManager.TileType.EMPTY  # Default
+			var color: Color = image.get_pixel(x, y)
+			var type: GridManager.TileType = GridManager.TileType.EMPTY
 			for map_color in color_to_type:
 				if color.is_equal_approx(map_color):
 					type = color_to_type[map_color]
 					break
-			if type == GridManager.TileType.EMPTY:
-				level.grid[y][x].is_walkable = true
-				level.grid[y][x].is_transparent = true
-				level.grid[y][x].set_property("type", GridManager.TileType.EMPTY)
-				level.grid[y][x].set_property("floor_light_level", default_light_level)
-				level.grid[y][x].set_property("floor_explored", default_explore_flag)
-			elif type == GridManager.TileType.WALL:
-				level.grid[y][x].is_walkable = false
-				level.grid[y][x].is_transparent = false
-				level.grid[y][x].set_property("type", GridManager.TileType.WALL)
-
-			else:
-				level.grid[y][x].set_property("type", GridManager.TileType.INTERACTIVE)
-				level.grid[y][x].is_walkable = true
-				level.grid[y][x].is_transparent = true
 			
-			level.grid[y][x].set_property("walls_light_level", 
-				[default_light_level, 
-				default_light_level, 
-				default_light_level, 
-				default_light_level])
-			level.grid[y][x].set_property("walls_explored", [default_explore_flag, default_explore_flag, default_explore_flag, default_explore_flag])
+			var tile: MyTileData = level.grid[y][x]
+			tile.set_property("type", type)
+			tile.set_property("walls_light_level", [DEFAULT_LIGHT_LEVEL, DEFAULT_LIGHT_LEVEL, DEFAULT_LIGHT_LEVEL, DEFAULT_LIGHT_LEVEL])
+			tile.set_property("walls_explored", [DEFAULT_EXPLORED, DEFAULT_EXPLORED, DEFAULT_EXPLORED, DEFAULT_EXPLORED])
 			
+			match type:
+				GridManager.TileType.EMPTY, GridManager.TileType.INTERACTIVE:
+					tile.is_walkable = true
+					tile.is_transparent = true
+					tile.set_property("floor_light_level", DEFAULT_LIGHT_LEVEL)
+					tile.set_property("floor_explored", DEFAULT_EXPLORED)
+				GridManager.TileType.WALL:
+					tile.is_walkable = false
+					tile.is_transparent = false
 	
 	return level
