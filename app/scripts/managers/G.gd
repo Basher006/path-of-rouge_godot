@@ -1,4 +1,4 @@
-# res://app/scipts/Managers/G.gd
+# res://app/scripts/managers/G.gd
 # Точка входа. Центральный класс.
 extends  Node
 

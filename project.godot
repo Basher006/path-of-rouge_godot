@@ -11,18 +11,20 @@ config_version=5
 [application]
 
 config/name="Path of Rouge"
+run/main_scene="uid://bmp0dw5npvbsg"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
 
 MRPAS="*res://utils/FOV algorithms/MRPAS.gd"
-GridManager="*res://app/scipts/TileMap/GridManager.gd"
-G="*res://app/scipts/Managers/G.gd"
-MapGenerator="*res://app/scipts/Managers/MapGenerator.gd"
+GridManager="*res://app/scripts/tileMap/GridManager.gd"
+G="*res://app/scripts/managers/G.gd"
+MapGenerator="*res://app/scripts/managers/MapGenerator.gd"
 DualGridx8Mapper="*res://utils/DualGridx8Mapper.gd"
-LightingManager="*res://app/scipts/Managers/LightingManager.gd"
-TurnManager="*res://app/scipts/Managers/TurnManager.gd"
+LightingManager="*res://app/scripts/managers/LightingManager.gd"
+TurnManager="*res://app/scripts/managers/TurnManager.gd"
+ActorFactory="*res://app/scripts/managers/ActorFactory.gd"
 
 [display]
 

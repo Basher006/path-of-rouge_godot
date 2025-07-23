@@ -1,4 +1,4 @@
-# res://app/TileMap/LevelData.gd
+# res://app/scripts/tileMap/LevelData.gd
 # Stores level data and tile grid.
 class_name LevelData
 extends RefCounted
@@ -6,6 +6,7 @@ extends RefCounted
 var grid: Array[Array] = []
 var width: int = 0
 var height: int = 0
+var player_start_position: Vector2i = Vector2i.ZERO
 
 
 # Initializes empty level of size width x height.

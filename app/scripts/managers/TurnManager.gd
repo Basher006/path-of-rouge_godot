@@ -1,4 +1,4 @@
-# res://app/scipts/Managers/TurnManager.gd
+# res://app/scripts/managers/TurnManager.gd
 # Управляет пошаговой системой ходов в игре.
 extends Node
 
@@ -35,6 +35,9 @@ func process_turn():
 	# Вернуться в PLAYER_TURN
 	current_state = TurnState.PLAYER_TURN
 	emit_signal("turn_changed", current_state)
+
+func is_player_turn() -> bool:
+	return current_state == TurnState.PLAYER_TURN
 
 # Внутренняя функция для фазы окружения (с задержкой)
 func _handle_environment_turn():

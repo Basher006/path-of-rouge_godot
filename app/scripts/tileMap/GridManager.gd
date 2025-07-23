@@ -1,4 +1,4 @@
-# res://app/TileMap/GridManager.gd
+# res://app/scripts/tileMap/GridManager.gd
 # Manages tile data access for the level.
 extends Node
 
@@ -6,7 +6,11 @@ enum TileType { EMPTY, WALL, INTERACTIVE }
 
 var level: LevelData
 var map_renderer: MapRenderer
+var actors_by_position: Dictionary = {}
 
+
+func get_player_start_position() -> Vector2i:
+	return level.player_start_position
 
 # Returns tile data at position or null if invalid.
 func get_tile(pos: Vector2i) -> MyTileData:
@@ -14,6 +18,38 @@ func get_tile(pos: Vector2i) -> MyTileData:
 		return null
 	return level.grid[pos.y][pos.x]
 
+
+func add_actor(actor: Actor) -> void:
+	# Проверяем, что в этой клетке еще никого нет
+	if actors_by_position.has(actor.grid_position):
+		#push_warning(f"Attempted to add actor to occupied cell {actor.grid_position}")
+		push_warning("Attempted to add actor to occupied cell %s" % actor.grid_position)
+		return
+	
+	actors_by_position[actor.grid_position] = actor
+
+func get_actor_at(position: Vector2i) -> Actor:
+	return actors_by_position.get(position, null)
+
+func remove_actor(actor: Actor) -> void:
+	if actors_by_position.has(actor.grid_position):
+		actors_by_position.erase(actor.grid_position)
+
+func move_actor(actor: Actor, new_position: Vector2i) -> void:
+	# Проверяем, что клетка назначения свободна
+	if get_actor_at(new_position) != null:
+		print("Cannot move to an occupied cell.")
+		return
+		
+	# Убираем актера со старой позиции
+	remove_actor(actor)
+	
+	# Обновляем его внутреннюю позицию
+	actor.grid_position = new_position
+	# Обновляем его реальную позицию в мире
+	actor.position = G.grid_to_world(new_position)
+	# Добавляем на новую позицию
+	add_actor(actor)
 
 # Returns floor light level at position.
 func get_floor_tile_light(pos: Vector2i) -> LightingManager.LightLevel:
@@ -25,6 +61,9 @@ func get_floor_tile_light(pos: Vector2i) -> LightingManager.LightLevel:
 
 # Checks if position is walkable.
 func is_walkable(pos: Vector2i) -> bool:
+	if get_actor_at(pos) != null:
+		return false
+	
 	var tile: MyTileData = get_tile(pos)
 	return tile and tile.is_walkable
 
@@ -57,7 +96,7 @@ func map_level() -> void:
 				tile.set_property("floor_tile_texture", DualGridx8Mapper.get_floor_atlas_coord(pos))
 			
 			var wall_matrix: Array = _get_walls_matrix_2x2(pos)
-			if wall_matrix.any(func(is_wall): return is_wall):
+			if wall_matrix.any(func(is_wall_): return is_wall_):
 				var texture_indices: = DualGridx8Mapper.get_walls_atlas_coord_array(wall_matrix)
 				_set_wall_tile_texture(pos + Vector2i(0, 0), texture_indices, 0)
 				_set_wall_tile_texture(pos + Vector2i(1, 0), texture_indices, 1)

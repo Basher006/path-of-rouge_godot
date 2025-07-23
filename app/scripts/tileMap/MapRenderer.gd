@@ -1,4 +1,4 @@
-# res://app/scipts/TileMap/MapRenderer.gd
+# res://app/scripts/tileMap/MapRenderer.gd
 # Renders tiles on TileMap layers.
 class_name MapRenderer
 extends Node

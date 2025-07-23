@@ -1,4 +1,4 @@
-# res://app/scipts/Managers/MapGenerator.gd
+# res://app/scripts/managers/MapGenerator.gd
 # Generates game levels.
 extends Node
 
@@ -47,4 +47,5 @@ func load_from_image(path: String) -> LevelData:
 					tile.is_walkable = false
 					tile.is_transparent = false
 	
+	level.player_start_position = Vector2i(5, 5)
 	return level

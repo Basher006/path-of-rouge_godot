@@ -1,4 +1,4 @@
-# res://app/scipts/Managers/LightingManager.gd
+# res://app/scripts/managers/LightingManager.gd
 # Manages lighting and field of view (FOV).
 extends Node
 
@@ -7,9 +7,10 @@ const LIGHT_OFFSET_WALLS: int = 4
 
 enum LightLevel { FULL = 1, MED = 2, LOW = 3, DARK = 4, DARKNESS_EXPLORED = 5 }
 
-# lit_tiles: { pos: Vector2i => { source_id: int => light_level: LightLevel } }
-var lit_tiles: Dictionary = {}
+
+var lit_tiles: Dictionary = {} # { pos: Vector2i => { source_id: int => light_level: LightLevel } }
 var light_sources: Dictionary = {}  # { id: int => LightSourceComponent }
+var lights_last_fov: Dictionary = {} # { id: int => { Vector2i: LightLevel } }
 
 var _light_id: int = 0
 
@@ -21,15 +22,21 @@ func update_light(light_source: LightSourceComponent, new_pos: Vector2i) -> void
 	
 	_update_old_tiles(light_source, new_fov, tiles_to_redraw)
 	_update_new_tiles(light_source, new_fov, tiles_to_redraw)
-	light_source.last_calculated_fov = new_fov
+	lights_last_fov[light_source.id] = new_fov
 	
 	_update_wall_lights(tiles_to_redraw)
 	GridManager.update_tiles(tiles_to_redraw)
 
 
+func clear_light(light_source: LightSourceComponent) -> void:
+	var tiles_to_redraw: Dictionary = {}
+	_update_old_tiles(light_source, {}, tiles_to_redraw)
+	_update_wall_lights(tiles_to_redraw)
+	GridManager.update_tiles(tiles_to_redraw)
+
 # Updates tiles no longer in FOV.
 func _update_old_tiles(light_source: LightSourceComponent, new_fov: Dictionary, tiles_to_redraw: Dictionary) -> void:
-	for pos in light_source.last_calculated_fov:
+	for pos in lights_last_fov[light_source.id]:
 		if not new_fov.has(pos):
 			if lit_tiles.has(pos):
 				var contributors: Dictionary = lit_tiles[pos]
@@ -165,12 +172,18 @@ func register_light(light: LightSourceComponent) -> void:
 	_light_id += 1
 	light.id = _light_id
 	light_sources[light.id] = light
+	lights_last_fov[light.id] = {}
 
 
 # Unregisters a light source.
 func unregister_light(id: int) -> void:
 	if light_sources.has(id):
+		clear_light(light_sources[id])
 		light_sources.erase(id)
+		lights_last_fov.erase(id)
+		for pos in lit_tiles.keys():
+			if lit_tiles[pos].has(id):
+				lit_tiles[pos].erase(id)
 
 
 # Returns wall texture index with light offset.

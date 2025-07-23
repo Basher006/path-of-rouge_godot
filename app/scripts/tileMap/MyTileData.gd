@@ -1,4 +1,4 @@
-# res://app/TileMap/MyTileData.gd
+# res://app/scripts/tileMap/MyTileData.gd
 # Stores data for a single tile.
 class_name MyTileData
 extends RefCounted

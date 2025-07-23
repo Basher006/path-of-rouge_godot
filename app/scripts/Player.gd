@@ -1,4 +1,4 @@
-# res://app/scipts/Player.gd
+# res://app/scripts/Player.gd
 # Player script for movement and light handling.
 class_name Player
 extends Node2D
@@ -33,8 +33,6 @@ func init(pos: Vector2) -> void:
 	move_timer.one_shot = false
 	move_timer.autostart = false
 	move_timer.timeout.connect(_on_move_timer_timeout)
-	
-	# Debug: Move to starting position.
 
 func _process(_delta: float) -> void:
 	if TurnManager.current_state != TurnManager.TurnState.PLAYER_TURN:
