@@ -9,7 +9,7 @@
 			},
 			"PlayerInputComponent": {},
 			"LightSourceComponent": {
-        		"radius": 100
+        		"radius": 8
       		},
 			"CameraComponent": {}
 		}

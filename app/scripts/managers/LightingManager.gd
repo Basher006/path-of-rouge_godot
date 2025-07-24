@@ -1,5 +1,5 @@
 # res://app/scripts/managers/LightingManager.gd
-# Manages lighting and field of view (FOV).
+# Manages lighting, FOV, and light sources.
 extends Node
 
 const LIGHT_OFFSET_FLOOR: int = 2
@@ -7,10 +7,9 @@ const LIGHT_OFFSET_WALLS: int = 4
 
 enum LightLevel { FULL = 1, MED = 2, LOW = 3, DARK = 4, DARKNESS_EXPLORED = 5 }
 
-
-var lit_tiles: Dictionary = {} # { pos: Vector2i => { source_id: int => light_level: LightLevel } }
-var light_sources: Dictionary = {}  # { id: int => LightSourceComponent }
-var lights_last_fov: Dictionary = {} # { id: int => { Vector2i: LightLevel } }
+var lit_tiles: Dictionary = {}  # { Vector2i: { source_id: LightLevel } }
+var light_sources: Dictionary = {}  # { id: LightSourceComponent }
+var lights_last_fov: Dictionary = {}  # { id: { Vector2i: LightLevel } }
 
 var _light_id: int = 0
 
@@ -28,21 +27,22 @@ func update_light(light_source: LightSourceComponent, new_pos: Vector2i) -> void
 	GridManager.update_tiles(tiles_to_redraw)
 
 
+# Clears light from a source.
 func clear_light(light_source: LightSourceComponent) -> void:
 	var tiles_to_redraw: Dictionary = {}
 	_update_old_tiles(light_source, {}, tiles_to_redraw)
 	_update_wall_lights(tiles_to_redraw)
 	GridManager.update_tiles(tiles_to_redraw)
 
+
 # Updates tiles no longer in FOV.
 func _update_old_tiles(light_source: LightSourceComponent, new_fov: Dictionary, tiles_to_redraw: Dictionary) -> void:
-	for pos in lights_last_fov[light_source.id]:
+	for pos in lights_last_fov.get(light_source.id, {}):
 		if not new_fov.has(pos):
-			if lit_tiles.has(pos):
-				var contributors: Dictionary = lit_tiles[pos]
-				contributors.erase(light_source.id)
-				var max_light: LightLevel = _get_max_light(contributors)
-				_set_tile_light(pos, max_light, tiles_to_redraw)
+			var contributors: Dictionary = lit_tiles.get(pos, {})
+			contributors.erase(light_source.id)
+			var max_light: LightLevel = _get_max_light(contributors)
+			_set_tile_light(pos, max_light, tiles_to_redraw)
 
 
 # Updates tiles now in FOV.
@@ -52,18 +52,16 @@ func _update_new_tiles(light_source: LightSourceComponent, new_fov: Dictionary, 
 		if not tile or not tile.has_property("floor_tile_texture"):
 			continue
 		
-		var old_light: LightLevel = tile.get_property("floor_light_level", LightLevel.DARK)
 		var contributors: Dictionary = lit_tiles.get(pos, {})
 		contributors[light_source.id] = new_fov[pos]
 		lit_tiles[pos] = contributors
 		
 		var new_light: LightLevel = _get_max_light(contributors)
-		if new_light != old_light:
-			_set_tile_light(pos, new_light, tiles_to_redraw)
-			GridManager.set_floor_as_explored(pos)
+		_set_tile_light(pos, new_light, tiles_to_redraw)
+		GridManager.set_floor_as_explored(pos)
 
 
-# Returns max light level from contributors (min enum value is brighter).
+# Gets the brightest light level from contributors.
 func _get_max_light(contributors: Dictionary) -> LightLevel:
 	var max_light: LightLevel = LightLevel.DARK
 	for light_value in contributors.values():
@@ -92,7 +90,7 @@ func _update_wall_lights(tiles_to_redraw: Dictionary) -> void:
 					tiles_to_redraw[wall_pos] = true
 
 
-# Computes FOV as { pos: Vector2i => LightLevel }.
+# Computes FOV as { Vector2i: LightLevel }.
 func _compute_fov(pos: Vector2i, light_source: LightSourceComponent) -> Dictionary:
 	var affected_cells: Dictionary = MRPAS.compute_fov(GridManager, pos, light_source.radius)
 	for cell_pos in affected_cells:
@@ -100,7 +98,7 @@ func _compute_fov(pos: Vector2i, light_source: LightSourceComponent) -> Dictiona
 	return affected_cells
 
 
-# Updates light for a single wall position; returns true if changed.
+# Updates light for a single wall; returns true if changed.
 func _update_single_wall_light(pos: Vector2i) -> bool:
 	if not GridManager.is_valid_pos(pos):
 		return false
@@ -109,21 +107,24 @@ func _update_single_wall_light(pos: Vector2i) -> bool:
 		return false
 	
 	var old_light: Array = tile.get_property("walls_light_level", [])
-	var new_light: Array
-	if tile.has_property("floor_tile_texture"):
-		new_light = _calc_floor_light_levels(tile)
-	else:
-		var textures: Array = tile.get_property("wall_tile_texture", [])
-		if DualGridx8Mapper.is_close_corner_tiles(textures):
-			new_light = _calc_close_corner_wall_light_levels(pos)
-		else:
-			new_light = _calc_standard_wall_light_levels(pos)
+	var new_light: Array = _calc_wall_light_levels(pos, tile)
 	
 	if new_light != old_light:
 		tile.set_property("walls_light_level", new_light)
 		GridManager.set_wall_as_explored(pos, new_light)
 		return true
 	return false
+
+
+# Calculates wall light levels for a tile.
+func _calc_wall_light_levels(pos: Vector2i, tile: MyTileData) -> Array:
+	if tile.has_property("floor_tile_texture"):
+		return _calc_floor_light_levels(tile)
+	
+	var textures: Array = tile.get_property("wall_tile_texture", [])
+	if DualGridx8Mapper.is_close_corner_tiles(textures):
+		return _calc_close_corner_wall_light_levels(pos)
+	return _calc_standard_wall_light_levels(pos)
 
 
 # Calculates uniform light levels for floor.
@@ -186,7 +187,7 @@ func unregister_light(id: int) -> void:
 				lit_tiles[pos].erase(id)
 
 
-# Returns wall texture index with light offset.
+# Gets wall texture index with light offset.
 func get_walls_texture_index_with_light_offset(texture_index: Vector2i, light: int, explored: bool) -> Vector2i:
 	if light < LightLevel.DARK:
 		return _get_walls_light_offset(texture_index, light)
@@ -195,7 +196,7 @@ func get_walls_texture_index_with_light_offset(texture_index: Vector2i, light: i
 	return _get_walls_light_offset(texture_index, LightLevel.DARK)
 
 
-# Returns floor texture index with light offset.
+# Gets floor texture index with light offset.
 func get_floor_texture_index_with_light_offset(texture_index: Vector2i, light: int, explored: bool) -> Vector2i:
 	if light < LightLevel.DARK:
 		return _get_floor_light_offset(texture_index, light)
@@ -219,9 +220,11 @@ func distance_to_light_level(distance: float, max_distance: int, levels: Array) 
 	return LightLevel.DARK
 
 
+# Applies light offset to walls texture.
 func _get_walls_light_offset(pos_in_atlas: Vector2i, light: int) -> Vector2i:
 	return pos_in_atlas + Vector2i(light * LIGHT_OFFSET_WALLS, 0)
 
 
+# Applies light offset to floor texture.
 func _get_floor_light_offset(pos_in_atlas: Vector2i, light: int) -> Vector2i:
 	return pos_in_atlas + Vector2i(light * LIGHT_OFFSET_FLOOR, 0)

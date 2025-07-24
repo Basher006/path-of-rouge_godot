@@ -1,14 +1,13 @@
 # res://app/scripts/components/StatsComponent.gd
-# Hold combat stats.
+# Resource for holding actor stats.
 class_name StatsComponent
 extends Resource
 
-# Экспортируем переменные, чтобы их можно было редактировать в инспекторе
-# и в нашем JSON-файле.
 @export var max_hp: int = 1
 @export var current_hp: int = 1
 @export var damage: int = 1
 
-# Метод для инициализации/сброса здоровья
-func initialize_stats():
+
+# Initializes stats to default values.
+func initialize_stats() -> void:
 	current_hp = max_hp
